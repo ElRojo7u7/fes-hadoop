@@ -1,0 +1,27 @@
+version: '3.9'
+
+services:
+  master:
+    image: hadoop_alpine
+    hostname: master
+    ports:
+      - "9870:9870"
+    networks:
+      - swarm-net
+
+  slaves:
+    image: hadoop_alpine
+    environment:
+      - MASTER_HADOOP_PASSWORD=1234
+      - MASTER_HOSTNAME=master
+    depends_on:
+      - master
+    deploy:
+      replicas: 5
+    networks:
+      - swarm-net
+
+networks:
+  swarm-net:
+    name: swarm-net
+    external: true
