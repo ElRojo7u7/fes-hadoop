@@ -107,10 +107,8 @@ ADD hadoop-3.3.5.tar.gz /usr/local/
 
 FROM base as hadoop_install
 COPY --from=hadoop_extract --chown=1000:1000 /usr/local/hadoop-3.3.5 /usr/local/hadoop-3.3.5
-RUN mkdir -p /opt && ln -s /usr/local/hadoop-3.3.5 /opt/hadoop \
-    && chown -h 1000:1000 /opt/hadoop
-RUN mkdir -p /mnt/hadoop/datanode \
-    && mkdir -p /mnt/hadoop/namenode \
+RUN mkdir -p /opt && ln -s /usr/local/hadoop-3.3.5 /opt/hadoop
+RUN mkdir -p /mnt/hadoop/datanode /mnt/hadoop/namenode \
     && chown -R 1000:1000 /mnt/hadoop
 ADD --chown=1000:1000 core-site.xml /opt/hadoop/etc/hadoop/core-site.xml
 ADD --chown=1000:1000 hdfs-site.xml /opt/hadoop/etc/hadoop/hdfs-site.xml
@@ -122,11 +120,8 @@ ADD --chown=1000:1000 yarn-site.xml /opt/hadoop/etc/hadoop/yarn-site.xml
 
 FROM alpine:3.6 as java_extract
 
-RUN mkdir -p /usr/lib/jvm
 ADD jdk-8u371-linux-x64.tar.gz /usr/lib/jvm
 ENV JAVA_HOME /usr/lib/jvm/jdk1.8.0_371
-RUN ln -s $JAVA_HOME/bin/java /usr/bin/java \
-    && ln -s $JAVA_HOME/bin/javac /usr/bin/javac
 
 RUN rm -rf $JAVA_HOME/*src.zip \
     && rm -rf $JAVA_HOME/lib/missioncontrol \
@@ -166,9 +161,10 @@ RUN rm -rf $JAVA_HOME/*src.zip \
 FROM hadoop_install as java_install
 ADD --checksum=sha256:2a3cd1111d2b42563e90a1ace54c3e000adf3a5a422880e7baf628c671b430c5 https://github.com/sgerrand/alpine-pkg-glibc/releases/download/2.32-r0/glibc-2.32-r0.apk ./
 RUN apk add --no-cache --allow-untrusted glibc-2.32-r0.apk && rm glibc-2.32-r0.apk
-RUN mkdir -p /usr/lib/jvm
 COPY --from=java_extract /usr/lib/jvm/ /usr/lib/jvm
 ENV JAVA_HOME /usr/lib/jvm/jdk1.8.0_371
+RUN ln -s $JAVA_HOME/bin/java /usr/bin/java \
+    && ln -s $JAVA_HOME/bin/javac /usr/bin/javac
 
 FROM java_install as env_conf
 RUN echo "export JAVA_HOME=$JAVA_HOME" >> /etc/profile.d/java-config.sh
@@ -178,12 +174,12 @@ RUN echo "export PATH=\$PATH:\$HADOOP_HOME/bin:\$HADOOP_HOME/sbin" >> /etc/profi
 RUN echo "export HADOOP_CONF_DIR=\$HADOOP_HOME/etc/hadoop" >> /etc/profile.d/hadoop-config.sh
 RUN echo "export JAVA_HOME=$JAVA_HOME" | tee -a /opt/hadoop/etc/hadoop/hadoop-env.sh > /dev/null
 
-FROM env_conf as entry_point
+FROM env_conf
 ENV MASTER_HOSTNAME ""
 ENV MASTER_HADOOP_PASSWORD ""
 
-COPY start.sh /tmp/start.sh
-RUN chmod +x /tmp/start.sh
+COPY start.sh /entry/start.sh
+RUN chmod +x /entry/start.sh
 
-ENTRYPOINT [ "/tmp/start.sh" ]
+ENTRYPOINT [ "/entry/start.sh" ]
 CMD [ "-d" ]

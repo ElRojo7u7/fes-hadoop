@@ -2,7 +2,7 @@
 
 su hadoop -s /bin/sh -c 'ssh-keygen -t ed25519 -qN "" -f $HOME/.ssh/id_ed25519'
 
-/usr/sbin/sshd 2> /dev/null
+nohup /usr/sbin/sshd 2> /dev/null
 
 if [ -n "$MASTER_HOSTNAME" ] && [ -n "$MASTER_HADOOP_PASSWORD" ]; then
     master_ip=$(getent hosts "$MASTER_HOSTNAME" | sed 's/\s.*//')
@@ -17,6 +17,6 @@ Hostname $(hostname -i)"
 
 fi
 
-if [[ $1 == "-d" ]]; then
+if [ "$1" == "-d" ]; then
   while true; do sleep 1000; done
 fi

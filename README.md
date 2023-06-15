@@ -47,7 +47,7 @@ MASTER_HADOOP_PASSWORD=<contraseña del maestro (usuario hadoop)>
 MASTER_HOSTNAME=<hostname del maestro>
 ```
 
-El nodo maestro no debe mandar ninguna variable de entorno, sin embargo una vez montado es deber del usuario mandar sus llaves a todos los nodos hijo, esto se puede hacer fácilmente entrando al contenedor maestro (con `docker exec -it <container> bash` y `su -l hadoop`) y ejecutando:
+El nodo maestro no debe mandar ninguna variable de entorno, sin embargo una vez montado es deber del usuario mandar sus llaves a todos los nodos hijo, esto se puede hacer fácilmente entrando al contenedor maestro (con `docker container exec -it <container> bash` y `su -l hadoop`) y ejecutando:
 
 ```
 ssh_config="Host $(hostname)\nUser hadoop\nHostname $(hostname -i)"; echo -e $ssh_config >> /home/hadoop/.ssh/config
