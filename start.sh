@@ -1,6 +1,6 @@
 #!/bin/bash
 
-su hadoop -s /bin/sh -c 'ssh-keygen -t ed25519 -N "" -f $HOME/.ssh/id_ed25519 > /dev/null'
+su hadoop -s /bin/sh -c 'ssh-keygen -t ed25519 -qN "" -f $HOME/.ssh/id_ed25519'
 
 /usr/sbin/sshd 2> /dev/null
 

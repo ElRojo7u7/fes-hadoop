@@ -17,7 +17,7 @@ services:
     depends_on:
       - master
     deploy:
-      replicas: 5
+      replicas: 6
     networks:
       - swarm-net
 
