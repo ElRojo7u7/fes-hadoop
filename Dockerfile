@@ -92,7 +92,7 @@ EXPOSE 8049
 EXPOSE 8089 8091
 
 USER root
-RUN apk add --update --no-cache bash curl openssh openssl nss sshpass
+RUN apk add --update --no-cache bash openssh openssl nss sshpass
 RUN adduser -h /home/hadoop -s /bin/sh -D hadoop
 RUN echo -n 'hadoop:1234' | chpasswd
 RUN ssh-keygen -qN "" -t ed25519 -f /etc/ssh/ssh_host_ed25519_key
