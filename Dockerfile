@@ -2,8 +2,6 @@
 
 FROM alpine:3.6 as base
 
-EXPOSE 22
-
 ######## HDFS #######
 # NameNode WebUI (dfs.namenode.http-address / dfs.namenode.https-address) 
 EXPOSE 9870 9871
@@ -177,6 +175,7 @@ RUN echo "export JAVA_HOME=$JAVA_HOME" | tee -a /opt/hadoop/etc/hadoop/hadoop-en
 FROM env_conf
 ENV MASTER_HOSTNAME ""
 ENV MASTER_HADOOP_PASSWORD ""
+ENV REPLICAS 5
 
 COPY start.sh /entry/start.sh
 RUN chmod +x /entry/start.sh

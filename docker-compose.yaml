@@ -4,20 +4,21 @@ services:
   master:
     image: hadoop_alpine
     hostname: master
-    ports:
-      - "9870:9870"
     networks:
       - swarm-net
+    environment:
+      - REPLICAS=3
 
   slaves:
     image: hadoop_alpine
     environment:
       - MASTER_HADOOP_PASSWORD=1234
       - MASTER_HOSTNAME=master
+      - REPLICAS=3
     depends_on:
       - master
     deploy:
-      replicas: 5
+      replicas: 3
     networks:
       - swarm-net
 

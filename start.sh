@@ -17,6 +17,8 @@ Hostname $(hostname -i)"
 
 fi
 
+sed -i "s/__REPLICAS__/$REPLICAS/g" /opt/hadoop/etc/hadoop/hdfs-site.xml
+
 if [ "$1" == "-d" ]; then
   while true; do sleep 1000; done
 fi
