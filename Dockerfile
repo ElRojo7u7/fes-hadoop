@@ -92,14 +92,11 @@ EXPOSE 8089 8091
 USER root
 RUN apk add --update --no-cache bash openssh openssl nss sshpass
 RUN adduser -h /home/hadoop -s /bin/sh -D hadoop
-RUN echo -n 'hadoop:1234' | chpasswd
 RUN ssh-keygen -qN "" -t ed25519 -f /etc/ssh/ssh_host_ed25519_key
 
 
 FROM alpine:3.6 as hadoop_extract
 # Install and configure hadoop #
-WORKDIR /home/hadoop
-
 ADD hadoop-3.3.5.tar.gz /usr/local/
 
 
@@ -122,7 +119,7 @@ ADD jdk-8u371-linux-x64.tar.gz /usr/lib/jvm
 ENV JAVA_HOME /usr/lib/jvm/jdk1.8.0_371
 
 RUN rm -rf $JAVA_HOME/*src.zip \
-    && rm -rf $JAVA_HOME/lib/missioncontrol \
+    $JAVA_HOME/lib/missioncontrol \
     $JAVA_HOME/lib/visualvm \
     $JAVA_HOME/lib/*javafx* \
     $JAVA_HOME/jre/lib/plugin.jar \
@@ -141,7 +138,7 @@ RUN rm -rf $JAVA_HOME/*src.zip \
     $JAVA_HOME/jre/lib/amd64/libgstreamer-lite.so \
     $JAVA_HOME/jre/lib/amd64/libjavafx*.so \
     $JAVA_HOME/jre/lib/amd64/libjfx*.so \
-    && rm -rf $JAVA_HOME/jre/bin/jjs \
+    $JAVA_HOME/jre/bin/jjs \
     $JAVA_HOME/jre/bin/keytool \
     $JAVA_HOME/jre/bin/orbd \
     $JAVA_HOME/jre/bin/pack200 \
@@ -161,21 +158,22 @@ ADD --checksum=sha256:2a3cd1111d2b42563e90a1ace54c3e000adf3a5a422880e7baf628c671
 RUN apk add --no-cache --allow-untrusted glibc-2.32-r0.apk && rm glibc-2.32-r0.apk
 COPY --from=java_extract /usr/lib/jvm/ /usr/lib/jvm
 ENV JAVA_HOME /usr/lib/jvm/jdk1.8.0_371
-RUN ln -s $JAVA_HOME/bin/java /usr/bin/java \
-    && ln -s $JAVA_HOME/bin/javac /usr/bin/javac
 
 FROM java_install as env_conf
-RUN echo "export JAVA_HOME=$JAVA_HOME" >> /etc/profile.d/java-config.sh
-RUN echo "export PATH=\$PATH:\$JAVA_HOME/bin" >> /etc/profile.d/java-config.sh
-RUN echo "export HADOOP_HOME=/opt/hadoop" >> /etc/profile.d/hadoop-config.sh
-RUN echo "export PATH=\$PATH:\$HADOOP_HOME/bin:\$HADOOP_HOME/sbin" >> /etc/profile.d/hadoop-config.sh
-RUN echo "export HADOOP_CONF_DIR=\$HADOOP_HOME/etc/hadoop" >> /etc/profile.d/hadoop-config.sh
+RUN echo -e "export JAVA_HOME=$JAVA_HOME\n \
+    export PATH=\$PATH:\$JAVA_HOME/bin" > /etc/profile.d/jdk-env.sh
+# I've done this cause i need the user hadoop can have this envs
+RUN echo -e "export HADOOP_HOME=/opt/hadoop\n\
+    export PATH=\$PATH:\$HADOOP_HOME/bin:\$HADOOP_HOME/sbin\n\
+    export HADOOP_CONF_DIR=\$HADOOP_HOME/etc/hadoop" > /etc/profile.d/hadoop-env.sh
 RUN echo "export JAVA_HOME=$JAVA_HOME" | tee -a /opt/hadoop/etc/hadoop/hadoop-env.sh > /dev/null
 
 FROM env_conf
 ENV MASTER_HOSTNAME ""
 ENV MASTER_HADOOP_PASSWORD ""
-ENV REPLICAS 5
+ENV REPLICAS 0
+ENV PASSWORD "1234"
+ENV HOSTNAME ""
 
 COPY start.sh /entry/start.sh
 RUN chmod +x /entry/start.sh

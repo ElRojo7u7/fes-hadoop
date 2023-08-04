@@ -18,7 +18,7 @@ docker swarm init --advertise-addr 127.0.0.1
 2. Crear la network
 
 ```bash
-docker network create --driver overlay swarm-net
+docker network create --driver bridge swarm-net
 ```
 
 ### Construcción de la imágen y deployment
@@ -40,11 +40,14 @@ docker stack deploy -c docker-compose.yaml swarm
 Al montarse los esclavos estos mandan sus llaves al maestro (~/.ssh/config, ~/.ssh/authorized_keys y /opt/hadoop/etc/hadoop/workers)
 
 Todos tienen el usuario `hadoop` con la contraseña `1234`
-Los esclavos deben tener las variables de entorno:
+La configuración del contenedor puede tener las sig. variables de entorno:
 
 ```bash
-MASTER_HADOOP_PASSWORD=<contraseña del maestro (usuario hadoop)>
-MASTER_HOSTNAME=<hostname del maestro>
+MASTER_HADOOP_PASSWORD=<contraseña del maestro (usuario hadoop)> *requerido para nodo esclavo
+MASTER_HOSTNAME=<hostname del maestro> *requerido para nodo esclavo
+HOSTNAME=<escojer un hostname diferente para resolucion dns, util en caso de usar servicios> (opcional, tiene el valor del hostname del contenedor por defecto)
+PASSWORD=<la contraseña para el usuario hadoop> (opcional, por defecto es 1234. Procura que la contraseña sea la misma para todos los nodos esclavo)
+REPLICAS=<no. de replicas> *requerido para todos
 ```
 
 El nodo maestro no debe mandar ninguna variable de entorno, sin embargo una vez montado es deber del usuario mandar sus llaves a todos los nodos hijo, esto se puede hacer fácilmente entrando al contenedor maestro (con `docker container exec -it <container> bash` y `su -l hadoop`) y ejecutando:
@@ -87,3 +90,4 @@ while read p; do hdfs dfsadmin -refreshNamenodes "$p":9867; done < /opt/hadoop/e
 
 1. Crear un .env para manejar la construcción de la imágen (hadoop y oracle java)
 2. Mejorar el script del entrypoint
+3. Vincular logs
