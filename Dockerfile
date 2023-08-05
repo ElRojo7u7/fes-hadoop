@@ -96,13 +96,23 @@ RUN ssh-keygen -qN "" -t ed25519 -f /etc/ssh/ssh_host_ed25519_key
 
 
 FROM alpine:3.6 as hadoop_extract
-# Install and configure hadoop #
-ADD hadoop-3.3.5.tar.gz /usr/local/
+
+WORKDIR /root
+ARG TARGETPLATFORM
+COPY hadoop-3.3.6.tar.gz /root
+COPY hadoop-3.3.6-aarch64.tar.gz /root
+RUN mkdir -p /usr/local && \
+    case $TARGETPLATFORM in \
+    "linux/arm64" | "linux/arm64/v8") tar -xzf hadoop-3.3.6-aarch64.tar.gz -C /usr/local;; \
+    *) tar -xzf hadoop-3.3.6.tar.gz -C /usr/local;; \
+    esac
+
+
 
 
 FROM base as hadoop_install
-COPY --from=hadoop_extract --chown=1000:1000 /usr/local/hadoop-3.3.5 /usr/local/hadoop-3.3.5
-RUN mkdir -p /opt && ln -s /usr/local/hadoop-3.3.5 /opt/hadoop
+COPY --from=hadoop_extract --chown=1000:1000 /usr/local/hadoop-3.3.6 /usr/local/hadoop-3.3.6
+RUN mkdir -p /opt && ln -s /usr/local/hadoop-3.3.6 /opt/hadoop
 RUN mkdir -p /mnt/hadoop/datanode /mnt/hadoop/namenode \
     && chown -R 1000:1000 /mnt/hadoop
 ADD --chown=1000:1000 core-site.xml /opt/hadoop/etc/hadoop/core-site.xml
@@ -114,8 +124,24 @@ ADD --chown=1000:1000 yarn-site.xml /opt/hadoop/etc/hadoop/yarn-site.xml
 # Install java
 
 FROM alpine:3.6 as java_extract
+WORKDIR /root
+ARG TARGETPLATFORM
+COPY jdk-8u371-linux-x64.tar.gz /root
+COPY jdk-8u371-linux-i586.tar.gz /root
+COPY jdk-8u371-linux-arm32-vfp-hflt.tar.gz /root
+COPY jdk-8u371-linux-aarch64.tar.gz /root
+RUN mkdir -p /usr/lib/jvm && \
+    case $TARGETPLATFORM in \
+    "linux/amd64") tar -xzf jdk-8u371-linux-x64.tar.gz -C /usr/lib/jvm;; \
+    "linux/386") tar -xzf jdk-8u371-linux-i586.tar.gz -C /usr/lib/jvm;; \
+    "linux/arm/v6" | "linux/arm/v7" | "linux/arm/v8") tar -xzf jdk-8u371-linux-arm32-vfp-hflt.tar.gz -C /usr/lib/jvm;; \
+    "linux/arm64" | "linux/arm64/v8") tar -xzf jdk-8u371-linux-aarch64.tar.gz -C /usr/lib/jvm;;\
+    esac
 
-ADD jdk-8u371-linux-x64.tar.gz /usr/lib/jvm
+
+FROM alpine:3.6 as java_clean
+
+COPY --from=java_extract /usr/lib/jvm /usr/lib/jvm
 ENV JAVA_HOME /usr/lib/jvm/jdk1.8.0_371
 
 RUN rm -rf $JAVA_HOME/*src.zip \
@@ -156,7 +182,7 @@ RUN rm -rf $JAVA_HOME/*src.zip \
 FROM hadoop_install as java_install
 ADD --checksum=sha256:2a3cd1111d2b42563e90a1ace54c3e000adf3a5a422880e7baf628c671b430c5 https://github.com/sgerrand/alpine-pkg-glibc/releases/download/2.32-r0/glibc-2.32-r0.apk ./
 RUN apk add --no-cache --allow-untrusted glibc-2.32-r0.apk && rm glibc-2.32-r0.apk
-COPY --from=java_extract /usr/lib/jvm/ /usr/lib/jvm
+COPY --from=java_clean /usr/lib/jvm/ /usr/lib/jvm
 ENV JAVA_HOME /usr/lib/jvm/jdk1.8.0_371
 
 FROM java_install as env_conf
@@ -178,5 +204,6 @@ ENV HOSTNAME ""
 COPY start.sh /entry/start.sh
 RUN chmod +x /entry/start.sh
 
+WORKDIR /home/hadoop
 ENTRYPOINT [ "/entry/start.sh" ]
 CMD [ "-d" ]

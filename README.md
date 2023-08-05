@@ -86,6 +86,12 @@ Refrescar los namenodes
 while read p; do hdfs dfsadmin -refreshNamenodes "$p":9867; done < /opt/hadoop/etc/hadoop/workers
 ```
 
+#### Construir para multiples arquitecturas
+
+```bash
+docker buildx build --platform linux/amd64,linux/arm64,linux/arm/v7,linux/arm/v6,linux/386 -t merith32/hadoop3.3.6:alpine3.6 --push .
+```
+
 #### TODO:
 
 1. Crear un .env para manejar la construcción de la imágen (hadoop y oracle java)
