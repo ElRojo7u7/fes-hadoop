@@ -99,20 +99,21 @@ FROM alpine:3.6 as hadoop_extract
 
 WORKDIR /root
 ARG TARGETPLATFORM
-COPY hadoop-3.3.6.tar.gz /root
-COPY hadoop-3.3.6-aarch64.tar.gz /root
-RUN mkdir -p /usr/local && \
-    case $TARGETPLATFORM in \
-    "linux/arm64" | "linux/arm64/v8") tar -xzf hadoop-3.3.6-aarch64.tar.gz -C /usr/local;; \
-    *) tar -xzf hadoop-3.3.6.tar.gz -C /usr/local;; \
-    esac
-
-
-
+ARG HADOOP_FILE
+RUN mkdir -p /usr/local
+ADD ${HADOOP_FILE}.tar.gz /root
+RUN if [ "${TARGETPLATFORM}" != "linux/arm64" ] && [ "${TARGETPLATFORM}" != "linux/arm64/v8" ]; then \
+    mv ${HADOOP_FILE} /usr/local; \
+    else rm -rf ${HADOOP_FILE}; \
+    fi
+ADD ${HADOOP_FILE}-aarch64.tar.gz /root
+RUN if [ "${TARGETPLATFORM}" == "linux/arm64" ] || [ "${TARGETPLATFORM}" == "linux/arm64/v8" ]; then \
+    mv ${HADOOP_FILE} /usr/local; \
+    fi
 
 FROM base as hadoop_install
-COPY --from=hadoop_extract --chown=1000:1000 /usr/local/hadoop-3.3.6 /usr/local/hadoop-3.3.6
-RUN mkdir -p /opt && ln -s /usr/local/hadoop-3.3.6 /opt/hadoop
+COPY --from=hadoop_extract --chown=1000:1000 /usr/local/${HADOOP_FILE} /usr/local/${HADOOP_FILE}
+RUN mkdir -p /opt && ln -s /usr/local/${HADOOP_FILE} /opt/hadoop
 RUN mkdir -p /mnt/hadoop/datanode /mnt/hadoop/namenode \
     && chown -R 1000:1000 /mnt/hadoop
 ADD --chown=1000:1000 core-site.xml /opt/hadoop/etc/hadoop/core-site.xml
@@ -126,17 +127,26 @@ ADD --chown=1000:1000 yarn-site.xml /opt/hadoop/etc/hadoop/yarn-site.xml
 FROM alpine:3.6 as java_extract
 WORKDIR /root
 ARG TARGETPLATFORM
-COPY jdk-8u371-linux-x64.tar.gz /root
-COPY jdk-8u371-linux-i586.tar.gz /root
-COPY jdk-8u371-linux-arm32-vfp-hflt.tar.gz /root
-COPY jdk-8u371-linux-aarch64.tar.gz /root
-RUN mkdir -p /usr/lib/jvm && \
-    case $TARGETPLATFORM in \
-    "linux/amd64") tar -xzf jdk-8u371-linux-x64.tar.gz -C /usr/lib/jvm;; \
-    "linux/386") tar -xzf jdk-8u371-linux-i586.tar.gz -C /usr/lib/jvm;; \
-    "linux/arm/v6" | "linux/arm/v7" | "linux/arm/v8") tar -xzf jdk-8u371-linux-arm32-vfp-hflt.tar.gz -C /usr/lib/jvm;; \
-    "linux/arm64" | "linux/arm64/v8") tar -xzf jdk-8u371-linux-aarch64.tar.gz -C /usr/lib/jvm;;\
-    esac
+RUN mkdir -p /usr/lib/jvm
+ADD jdk-8u371-linux-x64.tar.gz /root
+RUN if [ "${TARGETPLATFORM}" != "linux/amd64" ]; then \
+    rm -rf jdk1.8.0_371; \
+    else mv jdk1.8.0_371 /usr/lib/jvm; \
+    fi
+ADD jdk-8u371-linux-i586.tar.gz /root
+RUN if [ "${TARGETPLATFORM}" != "linux/386" ]; then \
+    rm -rf jdk1.8.0_371; \
+    else mv jdk1.8.0_371 /usr/lib/jvm; \
+    fi
+ADD jdk-8u371-linux-arm32-vfp-hflt.tar.gz /root
+RUN if [ "${TARGETPLATFORM}" != "linux/arm/v6" ] && [ "${TARGETPLATFORM}" != "linux/arm/v7" ]; then \
+    rm -rf jdk1.8.0_371; \
+    else mv jdk1.8.0_371 /usr/lib/jvm; \
+    fi
+ADD jdk-8u371-linux-aarch64.tar.gz /root
+RUN if [ "${TARGETPLATFORM}" == "linux/arm64" ] || [ "${TARGETPLATFORM}" == "linux/arm64/v8" ] || [ "${TARGETPLATFORM}" == "linux/arm/v8" ]; then \
+    mv jdk1.8.0_371 /usr/local/jvm; \
+    fi
 
 
 FROM alpine:3.6 as java_clean
@@ -203,7 +213,7 @@ ENV HOSTNAME ""
 
 COPY start.sh /entry/start.sh
 RUN chmod +x /entry/start.sh
-
 WORKDIR /home/hadoop
+
 ENTRYPOINT [ "/entry/start.sh" ]
 CMD [ "-d" ]

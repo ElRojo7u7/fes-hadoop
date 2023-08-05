@@ -26,7 +26,7 @@ docker network create --driver bridge swarm-net
 3. Construir la imagen
 
 ```bash
-docker build -t hadoop_alpine .
+docker build -t hadoop_alpine --build-arg HADOOP_FILE=hadoop-3.3.6 .
 ```
 
 4. Correr los contenedores
@@ -89,11 +89,10 @@ while read p; do hdfs dfsadmin -refreshNamenodes "$p":9867; done < /opt/hadoop/e
 #### Construir para multiples arquitecturas
 
 ```bash
-docker buildx build --platform linux/amd64,linux/arm64,linux/arm/v7,linux/arm/v6,linux/386 -t merith32/hadoop3.3.6:alpine3.6 --push .
+docker buildx build --platform linux/amd64,linux/arm64,linux/arm/v7,linux/arm/v6,linux/386 -t <tag> --build-arg HADOOP_FILE=hadoop-3.3.6 --push .
 ```
 
 #### TODO:
 
-1. Crear un .env para manejar la construcción de la imágen (hadoop y oracle java)
-2. Mejorar el script del entrypoint
-3. Vincular logs
+1. Mejorar el script del entrypoint
+2. Vincular logs
