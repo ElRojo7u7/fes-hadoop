@@ -97,12 +97,14 @@ RUN ssh-keygen -qN "" -t ed25519 -f /etc/ssh/ssh_host_ed25519_key
 
 FROM alpine:3.6 as hadoop_extract
 # Install and configure hadoop #
-ADD hadoop-3.3.5.tar.gz /usr/local/
+ARG HADOOP_FILE
+ADD ${HADOOP_FILE}.tar.gz /usr/local/
 
 
 FROM base as hadoop_install
-COPY --from=hadoop_extract --chown=1000:1000 /usr/local/hadoop-3.3.5 /usr/local/hadoop-3.3.5
-RUN mkdir -p /opt && ln -s /usr/local/hadoop-3.3.5 /opt/hadoop
+ARG HADOOP_FILE
+COPY --from=hadoop_extract --chown=1000:1000 /usr/local/${HADOOP_FILE} /usr/local/${HADOOP_FILE}
+RUN mkdir -p /opt && ln -s /usr/local/${HADOOP_FILE} /opt/hadoop
 RUN mkdir -p /mnt/hadoop/datanode /mnt/hadoop/namenode \
     && chown -R 1000:1000 /mnt/hadoop
 ADD --chown=1000:1000 core-site.xml /opt/hadoop/etc/hadoop/core-site.xml

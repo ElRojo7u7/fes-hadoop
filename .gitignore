@@ -1,2 +1,7 @@
 hadoop-3.3.5.tar.gz
 jdk-8u371-linux-x64.tar.gz
+hadoop-3.3.6-aarch64.tar.gz
+hadoop-3.3.6.tar.gz
+jdk-8u371-linux-aarch64.tar.gz
+jdk-8u371-linux-arm32-vfp-hflt.tar.gz
+jdk-8u371-linux-i586.tar.gz
