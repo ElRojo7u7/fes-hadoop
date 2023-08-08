@@ -114,6 +114,7 @@ RUN if [ "${TARGETPLATFORM}" == "linux/arm64" ] || [ "${TARGETPLATFORM}" == "lin
     fi
 
 FROM base as hadoop_install
+ARG HADOOP_FILE
 COPY --from=hadoop_extract --chown=1000:1000 /usr/local/${HADOOP_FILE} /usr/local/${HADOOP_FILE}
 RUN mkdir -p /opt && ln -s /usr/local/${HADOOP_FILE} /opt/hadoop
 RUN mkdir -p /mnt/hadoop/datanode /mnt/hadoop/namenode \
@@ -190,8 +191,14 @@ RUN rm -rf $JAVA_HOME/*src.zip \
     $JAVA_HOME/jre/lib/oblique-fonts
 
 FROM hadoop_install as java_install
-ADD --checksum=sha256:2a3cd1111d2b42563e90a1ace54c3e000adf3a5a422880e7baf628c671b430c5 https://github.com/sgerrand/alpine-pkg-glibc/releases/download/2.32-r0/glibc-2.32-r0.apk ./
-RUN apk add --no-cache --allow-untrusted glibc-2.32-r0.apk && rm glibc-2.32-r0.apk
+ARG TARGETPLATFORM
+COPY glibc-2.32-r0.apk ./
+COPY glibc-2.32-r0-aarch64.apk ./
+RUN if [ "${TARGETPLATFORM}" == "linux/arm64" ] || [ "${TARGETPLATFORM}" == "linux/arm64/v8" ] || [ "${TARGETPLATFORM}" == "linux/arm/v8" ]; then \
+    apk add --no-cache --allow-untrusted glibc-2.32-r0-aarch64.apk; \
+    else apk add --no-cache --allow-untrusted glibc-2.32-r0.apk; \
+    fi
+RUN rm glibc-2.32-r0.apk glibc-2.32-r0-aarch64.apk
 COPY --from=java_extract /usr/lib/jvm/ /usr/lib/jvm
 ENV JAVA_HOME /usr/lib/jvm/jdk1.8.0_371
 
