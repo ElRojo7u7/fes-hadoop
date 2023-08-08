@@ -2,6 +2,8 @@
 
 FROM alpine:3.6 as base
 
+EXPOSE 22
+
 ######## HDFS #######
 # NameNode WebUI (dfs.namenode.http-address / dfs.namenode.https-address) 
 EXPOSE 9870 9871
@@ -95,11 +97,11 @@ RUN adduser -h /home/hadoop -s /bin/sh -D hadoop
 RUN ssh-keygen -qN "" -t ed25519 -f /etc/ssh/ssh_host_ed25519_key
 
 
-FROM alpine:3.6 as hadoop_extract
-
-WORKDIR /root
+FROM --platform=$BUILDPLATFORM alpine:3.6 as hadoop_extract
+ARG BUILDPLATFORM
 ARG TARGETPLATFORM
 ARG HADOOP_FILE
+WORKDIR /root
 RUN mkdir -p /usr/local
 ADD ${HADOOP_FILE}.tar.gz /root
 RUN if [ "${TARGETPLATFORM}" != "linux/arm64" ] && [ "${TARGETPLATFORM}" != "linux/arm64/v8" ]; then \
@@ -124,36 +126,34 @@ ADD --chown=1000:1000 yarn-site.xml /opt/hadoop/etc/hadoop/yarn-site.xml
 
 # Install java
 
-FROM alpine:3.6 as java_extract
-WORKDIR /root
+FROM --platform=$BUILDPLATFORM alpine:3.6 as java_extract
+ARG BUILDPLATFORM
 ARG TARGETPLATFORM
+WORKDIR /root
 RUN mkdir -p /usr/lib/jvm
 ADD jdk-8u371-linux-x64.tar.gz /root
 RUN if [ "${TARGETPLATFORM}" != "linux/amd64" ]; then \
     rm -rf jdk1.8.0_371; \
+    echo "removed amd64"; \
     else mv jdk1.8.0_371 /usr/lib/jvm; \
     fi
 ADD jdk-8u371-linux-i586.tar.gz /root
 RUN if [ "${TARGETPLATFORM}" != "linux/386" ]; then \
     rm -rf jdk1.8.0_371; \
+    echo "remover x86"; \
     else mv jdk1.8.0_371 /usr/lib/jvm; \
     fi
 ADD jdk-8u371-linux-arm32-vfp-hflt.tar.gz /root
 RUN if [ "${TARGETPLATFORM}" != "linux/arm/v6" ] && [ "${TARGETPLATFORM}" != "linux/arm/v7" ]; then \
     rm -rf jdk1.8.0_371; \
+    echo "removed arm x86"; \
     else mv jdk1.8.0_371 /usr/lib/jvm; \
     fi
 ADD jdk-8u371-linux-aarch64.tar.gz /root
 RUN if [ "${TARGETPLATFORM}" == "linux/arm64" ] || [ "${TARGETPLATFORM}" == "linux/arm64/v8" ] || [ "${TARGETPLATFORM}" == "linux/arm/v8" ]; then \
-    mv jdk1.8.0_371 /usr/local/jvm; \
+    mv jdk1.8.0_371 /usr/lib/jvm; \
     fi
-
-
-FROM alpine:3.6 as java_clean
-
-COPY --from=java_extract /usr/lib/jvm /usr/lib/jvm
 ENV JAVA_HOME /usr/lib/jvm/jdk1.8.0_371
-
 RUN rm -rf $JAVA_HOME/*src.zip \
     $JAVA_HOME/lib/missioncontrol \
     $JAVA_HOME/lib/visualvm \
@@ -192,7 +192,7 @@ RUN rm -rf $JAVA_HOME/*src.zip \
 FROM hadoop_install as java_install
 ADD --checksum=sha256:2a3cd1111d2b42563e90a1ace54c3e000adf3a5a422880e7baf628c671b430c5 https://github.com/sgerrand/alpine-pkg-glibc/releases/download/2.32-r0/glibc-2.32-r0.apk ./
 RUN apk add --no-cache --allow-untrusted glibc-2.32-r0.apk && rm glibc-2.32-r0.apk
-COPY --from=java_clean /usr/lib/jvm/ /usr/lib/jvm
+COPY --from=java_extract /usr/lib/jvm/ /usr/lib/jvm
 ENV JAVA_HOME /usr/lib/jvm/jdk1.8.0_371
 
 FROM java_install as env_conf
