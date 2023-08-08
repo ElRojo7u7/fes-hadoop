@@ -18,7 +18,7 @@ docker swarm init --advertise-addr 127.0.0.1
 2. Crear la network
 
 ```bash
-docker network create --driver bridge swarm-net
+docker network create --driver bridge --scope=swarm swarm-net
 ```
 
 ### Construcción de la imágen y deployment
@@ -26,7 +26,7 @@ docker network create --driver bridge swarm-net
 3. Construir la imagen
 
 ```bash
-docker build -t --build-arg HADOOP_FILE=hadoop-3.3.5 hadoop_alpine .
+docker build -t hadoop_alpine --build-arg HADOOP_FILE=hadoop-3.3.5 .
 ```
 
 4. Correr los contenedores

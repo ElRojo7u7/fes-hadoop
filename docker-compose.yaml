@@ -8,6 +8,8 @@ services:
       - swarm-net
     environment:
       - REPLICAS=3
+      - PASSWORD=1234
+      - MASTER_HOSTNAME=master
 
   slaves:
     image: hadoop_alpine
@@ -15,6 +17,7 @@ services:
       - MASTER_HADOOP_PASSWORD=1234
       - MASTER_HOSTNAME=master
       - REPLICAS=3
+      - PASSWORD=1234
     depends_on:
       - master
     deploy:
