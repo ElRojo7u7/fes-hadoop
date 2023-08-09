@@ -4,6 +4,8 @@ FROM alpine:3.6 as base
 
 EXPOSE 22
 
+EXPOSE 9000
+
 ######## HDFS #######
 # NameNode WebUI (dfs.namenode.http-address / dfs.namenode.https-address) 
 EXPOSE 9870 9871

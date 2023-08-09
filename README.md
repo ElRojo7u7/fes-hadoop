@@ -18,7 +18,7 @@ docker swarm init --advertise-addr 127.0.0.1
 2. Crear la network
 
 ```bash
-docker network create --driver bridge swarm-net
+docker network create --driver bridge --scope=swarm swarm-net
 ```
 
 ### Construcción de la imágen y deployment
