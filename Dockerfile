@@ -165,10 +165,16 @@ FROM java_install as env_conf
 RUN echo -e "export JAVA_HOME=$JAVA_HOME\n \
     export PATH=\$PATH:\$JAVA_HOME/bin" > /etc/profile.d/jdk-env.sh
 # I've done this cause i need the user hadoop can have this envs
-RUN echo -e "export HADOOP_HOME=/opt/hadoop\n\
-    export PATH=\$PATH:\$HADOOP_HOME/bin:\$HADOOP_HOME/sbin\n\
-    export HADOOP_CONF_DIR=\$HADOOP_HOME/etc/hadoop" > /etc/profile.d/hadoop-env.sh
-RUN echo "export JAVA_HOME=$JAVA_HOME" | tee -a /opt/hadoop/etc/hadoop/hadoop-env.sh > /dev/null
+RUN echo -e "export HADOOP_HOME=/opt/hadoop/\n \
+    export HADOOP_CONF_DIR=\$HADOOP_HOME/etc/hadoop\n \
+    export HADOOP_HOME_WARN_SUPPRESS=1\n \
+    export HADOOP_ROOT_LOGGER=\"WARN,DRFA\"\n \
+    export HADOOP_OPTS=\"-Xmx384m\"\n \
+    export PATH=\$PATH:\$HADOOP_HOME/bin:\$HADOOP_HOME/sbin" > /etc/profile.d/hadoop-env.sh
+
+RUN echo -e "export JAVA_HOME=$JAVA_HOME\n \
+    export HADOOP_OPTS=\"-XX:-PrintWarnings -Djava.net.preferIPv4Stack=true\"\n \
+    export HDFS_NAMENODE_OPTS=\"-Xms384m -Xmx384m\"" | tee -a /opt/hadoop/etc/hadoop/hadoop-env.sh > /dev/null
 
 FROM env_conf
 ENV MASTER_HOSTNAME ""
@@ -176,6 +182,10 @@ ENV MASTER_HADOOP_PASSWORD ""
 ENV REPLICAS 0
 ENV PASSWORD "1234"
 ENV HOSTNAME ""
+ENV SLAVE_HADOOP_PASSWORD ""
+ENV ISMASTER "false"
+
+RUN su - hadoop -c "mkdir -p ~/.ssh && touch ~/.ssh/authorized_keys ~/.ssh/config"
 
 COPY start.sh /entry/start.sh
 RUN chmod +x /entry/start.sh
