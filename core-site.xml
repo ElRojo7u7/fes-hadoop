@@ -22,7 +22,7 @@
     <value>hdfs://__MASTER_HOSTNAME__:9000</value>
   </property>
   <property>
-    <name>fs.default.name</name>
-    <value>hdfs://__MASTER_HOSTNAME__:9000</value>
+    <name>hadoop.http.staticuser.user</name>
+    <value>hadoop</value>
   </property>
 </configuration>

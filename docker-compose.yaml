@@ -7,18 +7,23 @@ services:
     networks:
       - swarm-net
     environment:
-      - REPLICAS=3
+      - REPLICAS=2
+      - PASSWORD=master_passwd
+      - MASTER_HOSTNAME=master
+      - ISMASTER=true
+      - SLAVE_HADOOP_PASSWORD=1234
 
   slaves:
     image: hadoop_alpine
     environment:
-      - MASTER_HADOOP_PASSWORD=1234
+      - MASTER_HADOOP_PASSWORD=master_passwd
       - MASTER_HOSTNAME=master
-      - REPLICAS=3
+      - REPLICAS=2
+      - PASSWORD=1234
     depends_on:
       - master
     deploy:
-      replicas: 3
+      replicas: 2
     networks:
       - swarm-net
 

@@ -48,8 +48,11 @@ MASTER_HOSTNAME=<hostname del maestro> *requerido para nodo esclavo
 HOSTNAME=<escojer un hostname diferente para resolucion dns, util en caso de usar servicios> (opcional, tiene el valor del hostname del contenedor por defecto)
 PASSWORD=<la contraseña para el usuario hadoop> (opcional, por defecto es 1234. Procura que la contraseña sea la misma para todos los nodos esclavo)
 REPLICAS=<no. de replicas> *requerido para todos
+SLAVE_HADOOP_PASSWORD=<contraseña del usuario hadoop de los nodos esclavo> *requerido para nodo maestro
+ISMASTER=<si es nodo maestro o no> (false por defecto)
 ```
-
+### Todo esto ya se hace automaticamente
+----
 El nodo maestro no debe mandar ninguna variable de entorno, sin embargo una vez montado es deber del usuario mandar sus llaves a todos los nodos hijo, esto se puede hacer fácilmente entrando al contenedor maestro (con `docker container exec -it <container> bash` y `su -l hadoop`) y ejecutando:
 
 ```bash
@@ -62,9 +65,11 @@ cat /home/hadoop/.ssh/id_ed25519.pub >> /home/hadoop/.ssh/authorized_keys
 Remover `localhost` del archivo `/opt/hadoop/etc/hadoop/workers`
 
 ```bash
-while read p; do < /home/hadoop/.ssh/authorized_keys sshpass -p "1234" ssh -o StrictHostkeyChecking=no "$p" 'cat >> /home/hadoop/.ssh/authorized_keys'; < /home/hadoop/.ssh/config sshpass -p "1234" ssh -o StrictHostkeyChecking=no "$p" 'cat >> /home/hadoop/.ssh/config'; done < /opt/hadoop/etc/hadoop/workers
+while read p; do < /home/hadoop/.ssh/authorized_keys sshpass -p "1234" ssh -o StrictHostkeyChecking=no hadoop@"$p" 'cat >> /home/hadoop/.ssh/authorized_keys'; < /home/hadoop/.ssh/config sshpass -p "1234" ssh -o StrictHostkeyChecking=no hadoop@"$p" 'cat >> /home/hadoop/.ssh/config'; done < /opt/hadoop/etc/hadoop/workers
 
 ```
+
+----
 
 Finalmente el nodo maestro inicia el servicio
 
@@ -96,3 +101,4 @@ docker buildx build --platform linux/amd64,linux/arm64,linux/arm/v7,linux/arm/v6
 
 1. Mejorar el script del entrypoint
 2. Vincular logs
+3. Agragar soporte para múltiples maestros
