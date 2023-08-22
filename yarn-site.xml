@@ -20,6 +20,11 @@
   </property>
 
   <property>
+    <name>yarn.nodemanager.address</name>
+    <value>0.0.0.0:8070</value>
+  </property>
+
+  <property>
     <name>yarn.acl.enable</name>
     <value>0</value>
   </property>

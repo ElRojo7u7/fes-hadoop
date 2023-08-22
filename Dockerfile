@@ -54,7 +54,7 @@ EXPOSE 8031
 EXPOSE 8030
 
 # yarn.nodemanager.address
-EXPOSE 0
+EXPOSE 8040
 
 # yarn.nodemanager.localizer.address
 EXPOSE 8090
@@ -90,7 +90,7 @@ EXPOSE 8049
 EXPOSE 8089 8091
 
 USER root
-RUN apk add --update --no-cache bash openssh openssl nss sshpass
+RUN apk add --update --no-cache bash openssh openssl nss sshpass findutils
 RUN adduser -h /home/hadoop -s /bin/sh -D hadoop
 RUN ssh-keygen -qN "" -t ed25519 -f /etc/ssh/ssh_host_ed25519_key
 
