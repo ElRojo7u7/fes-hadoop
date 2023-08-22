@@ -58,7 +58,7 @@ EXPOSE 8031
 EXPOSE 8030
 
 # yarn.nodemanager.address
-EXPOSE 0
+EXPOSE 8045
 
 # yarn.nodemanager.localizer.address
 EXPOSE 8090

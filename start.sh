@@ -6,6 +6,7 @@ Green='\033[0;32m'        # Green
 Yellow='\033[0;33m'       # Yellow
 Cyan='\033[0;36m'         # Cyan
 
+chown root:hadoop /etc/hosts && chmod 664 /etc/hosts
 
 su hadoop -s /bin/sh -c 'ssh-keygen -t ed25519 -qN "" -f $HOME/.ssh/id_ed25519'
 nohup /usr/sbin/sshd 2> /dev/null
@@ -45,6 +46,14 @@ HostName ${HOSTNAME}"
       echo -e "${Cyan}[+]${NC} ${HOSTNAME} added to master's ~/.ssh/config"
       echo "${HOSTNAME}" | sshpass -p "$MASTER_HADOOP_PASSWORD" ssh -o StrictHostkeyChecking=no hadoop@"${MASTER_HOSTNAME}" 'cat >> /opt/hadoop/etc/hadoop/workers'
       echo -e "${Cyan}[+]${NC} ${HOSTNAME} added to master's /opt/hadoop/etc/hadoop/workers"
+      svcIp=$(nslookup "${HOSTNAME}" | grep "Address 1" | tail -n 1 | awk '{print $3}');
+      while [ -z "${svcIp}" ]; do
+        echo -e "${Yellow}[!]${NC} Could'nt get self svc ip (${HOSTNAME} not resolving), retrying after 5 seconds..."
+        sleep 5; svcIp=$(nslookup "${HOSTNAME}" | grep "Address 1" | tail -n 1 | awk '{print $3}');
+      done
+      selfHost="${svcIp}\t$(hostname)"
+      echo -e "${selfHost}" | sshpass -p "$MASTER_HADOOP_PASSWORD" ssh -o StrictHostkeyChecking=no hadoop@"${MASTER_HOSTNAME}" 'cat >> /etc/hosts'
+      echo -e "${Cyan}[+]${NC} ${selfHost} added to master's /etc/hosts"
     } || {
       echo -e "${Red}[!] Error${NC}: Unable to connect to master via ssh, did you provide the correct password?"
       exit 1
@@ -71,9 +80,16 @@ HostName ${HOSTNAME}"
       while read -r p; do
         < /home/hadoop/.ssh/authorized_keys sshpass -p "${SLAVE_HADOOP_PASSWORD}" ssh -o StrictHostkeyChecking=no hadoop@"${p}" 'cat >> /home/hadoop/.ssh/authorized_keys'
         < /home/hadoop/.ssh/config sshpass -p "${SLAVE_HADOOP_PASSWORD}" ssh -o StrictHostkeyChecking=no hadoop@"${p}" 'cat >> /home/hadoop/.ssh/config'
+        svcIp=$(nslookup "${HOSTNAME}" | grep "Address 1" | tail -n 1 | awk '{print $3}');
+        while [ -z "${svcIp}" ]; do
+          echo -e "${Yellow}[!]${NC} Could'nt get self svc ip (${HOSTNAME} not resolving), retrying after 5 seconds..."
+          sleep 5; svcIp=$(nslookup "${HOSTNAME}" | grep "Address 1" | tail -n 1 | awk '{print $3}');
+        done
+        selfHost="${svcIp}\t$(hostname)"
+        echo -e "${selfHost}" | sshpass -p "${SLAVE_HADOOP_PASSWORD}" ssh -o StrictHostkeyChecking=no hadoop@"${p}" 'cat >> /etc/hosts'
       done < /opt/hadoop/etc/hadoop/workers
     } || {
-      echo -e "${Red}[!] Error${NC}: Unable to connect to master via ssh, did you provide the correct password?"
+      echo -e "${Red}[!] Error${NC}: Unable to connect to node via ssh, did you provide the correct password?"
       exit 1
     }
     echo -e "${Cyan}[+]${NC} Succeeded sending ~/.ssh/config and ~/.ssh/authorized_keys to slaves"
