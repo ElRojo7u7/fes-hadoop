@@ -2,7 +2,7 @@ version: '3.9'
 
 services:
   master:
-    image: hadoop_alpine
+    image: hadoop_alpine3.6/spark
     hostname: master
     networks:
       - swarm-net
@@ -12,9 +12,11 @@ services:
       - MASTER_HOSTNAME=master
       - ISMASTER=true
       - SLAVE_HADOOP_PASSWORD=1234
-
+    ports:
+      - 9870:9870
+      
   slaves:
-    image: hadoop_alpine
+    image: hadoop_alpine3.6/spark
     environment:
       - MASTER_HADOOP_PASSWORD=master_passwd
       - MASTER_HOSTNAME=master

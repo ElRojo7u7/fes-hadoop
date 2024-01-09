@@ -25,6 +25,11 @@
   </property>
 
   <property>
+    <name>yarn.resourcemanager.webapp.address</name>
+    <value>0.0.0.0:8088</value>
+  </property>
+
+  <property>
     <name>yarn.acl.enable</name>
     <value>0</value>
   </property>
@@ -41,12 +46,12 @@
 
   <property>
     <name>yarn.nodemanager.resource.memory-mb</name>
-    <value>900</value>
+    <value>6144</value>
   </property>
 
   <property>
     <name>yarn.scheduler.maximum-allocation-mb</name>
-    <value>900</value>
+    <value>6144</value>
   </property>
 
   <property>

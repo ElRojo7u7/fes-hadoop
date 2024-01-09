@@ -5,3 +5,5 @@ hadoop-3.3.6.tar.gz
 jdk-8u371-linux-aarch64.tar.gz
 jdk-8u371-linux-arm32-vfp-hflt.tar.gz
 jdk-8u371-linux-i586.tar.gz
+spark-3.5.0-bin-without-hadoop.tgz
+glibc-2.32-r0.apk

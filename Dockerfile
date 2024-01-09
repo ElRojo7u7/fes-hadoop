@@ -1,5 +1,3 @@
-# syntax=docker/dockerfile:1-labs
-
 FROM alpine:3.6 as base
 
 ######## HDFS #######
@@ -90,7 +88,7 @@ EXPOSE 8049
 EXPOSE 8089 8091
 
 USER root
-RUN apk add --update --no-cache bash openssh openssl nss sshpass findutils
+RUN apk add --update --no-cache bash openssh openssl nss sshpass findutils procps
 RUN adduser -h /home/hadoop -s /bin/sh -D hadoop
 RUN ssh-keygen -qN "" -t ed25519 -f /etc/ssh/ssh_host_ed25519_key
 
@@ -156,7 +154,7 @@ RUN rm -rf $JAVA_HOME/*src.zip \
     $JAVA_HOME/jre/lib/oblique-fonts
 
 FROM hadoop_install as java_install
-ADD --checksum=sha256:2a3cd1111d2b42563e90a1ace54c3e000adf3a5a422880e7baf628c671b430c5 https://github.com/sgerrand/alpine-pkg-glibc/releases/download/2.32-r0/glibc-2.32-r0.apk ./
+COPY glibc-2.32-r0.apk .
 RUN apk add --no-cache --allow-untrusted glibc-2.32-r0.apk && rm glibc-2.32-r0.apk
 COPY --from=java_extract /usr/lib/jvm/ /usr/lib/jvm
 ENV JAVA_HOME /usr/lib/jvm/jdk1.8.0_371
@@ -176,7 +174,16 @@ RUN echo -e "export JAVA_HOME=$JAVA_HOME\n \
     export HADOOP_OPTS=\"-XX:-PrintWarnings -Djava.net.preferIPv4Stack=true\"\n \
     export HDFS_NAMENODE_OPTS=\"-Xms384m -Xmx384m\"" | tee -a /opt/hadoop/etc/hadoop/hadoop-env.sh > /dev/null
 
-FROM env_conf
+RUN echo -e "export SPARK_HOME=/opt/spark\n \
+    export SPARK_DIST_CLASSPATH=\$(/opt/hadoop/bin/hadoop classpath)\n \
+    export PATH=\$PATH:\$SPARK_HOME/bin:\$SPARK_HOME/sbin" > /etc/profile.d/spark-env.sh
+
+FROM env_conf as spark_install
+ARG SPARK_FILE
+ADD ${SPARK_FILE}.tgz /usr/local
+RUN ln -s /usr/local/${SPARK_FILE} /opt/spark
+
+FROM spark_install
 ENV MASTER_HOSTNAME ""
 ENV MASTER_HADOOP_PASSWORD ""
 ENV REPLICAS 0
